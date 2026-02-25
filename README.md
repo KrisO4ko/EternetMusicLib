@@ -1,3 +1,5 @@
+# EternetMusicLib
+
 Java-библиотека для получения информации о музыке, которая играет прямо сейчас на компьютере.
 
 Разработана для чит-клиента Minecraft — **Eternet**. Используется для отображения текущего трека в HUD.
@@ -5,8 +7,9 @@ Java-библиотека для получения информации о му
 ## Возможности
 - Получение названия трека, артиста, альбома
 - Определение статуса воспроизведения (играет/пауза/стоп)
-- Определение источника (Spotify, Chrome, Firefox и др.)
+- Определение источника (Spotify, Yandex Music и др.)
 - Получение ссылки на обложку альбома
+- Получение текущего времени и длительности трека
 - Кроссплатформенность (Windows, macOS, Linux)
 
 ## Проверено на Windows 10 (Spotify)
@@ -33,7 +36,7 @@ API-ключи не требуются. Библиотека возвращае�
 
 ## Установка
 
-Скопируй пакет `com.eternet.music` в свой проект.
+Скопируй пакет `moscow.krisstal.music` в свой проект.
 
 Требуется Java 17+.
 
@@ -43,23 +46,23 @@ API-ключи не требуются. Библиотека возвращае�
 
 ```java
 import moscow.krisstal.music.EternetMusicTracker;
-import moscow.krisstal..music.cover.CoverArtFetcher;
+import moscow.krisstal.music.cover.CoverArtFetcher;
 import moscow.krisstal.music.model.NowPlayingTrack;
-import java.util.Optional;
 
 public class Example {
     public static void main(String[] args) {
         EternetMusicTracker tracker = new EternetMusicTracker();
         CoverArtFetcher cover = new CoverArtFetcher();
         
-        Optional<NowPlayingTrack> track = tracker.getCurrentTrack();
+        NowPlayingTrack t = tracker.getCurrentTrackInterpolated();
         
-        if (track.isPresent()) {
-            NowPlayingTrack t = track.get();
+        if (t.hasTime()) {
             System.out.println("Сейчас играет: " + t.artist() + " - " + t.title());
             System.out.println("Альбом: " + t.album());
             System.out.println("Статус: " + t.status());
             System.out.println("Источник: " + t.sourceApplication());
+            System.out.println("Время: " + t.getTimeFormatted());
+            System.out.println("Прогресс: " + (int)(t.getProgress() * 100) + "%");
             cover.fetchUrl(t.artist(), t.title()).ifPresent(url -> System.out.println("Обложка: " + url));
         } else {
             System.out.println("Ничего не играет");

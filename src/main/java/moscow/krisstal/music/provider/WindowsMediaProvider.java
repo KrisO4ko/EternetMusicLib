@@ -21,14 +21,19 @@ public class WindowsMediaProvider implements LocalMediaProvider {
                     "  if ($null -eq $cs) { Write-Output 'NO_SESSION'; exit 0 }\n" +
                     "  $mp = Await ($cs.TryGetMediaPropertiesAsync()) ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties])\n" +
                     "  $pi = $cs.GetPlaybackInfo()\n" +
+                    "  $tp = $cs.GetTimelineProperties()\n" +
                     "  $st = 'STOPPED'\n" +
                     "  if ($null -ne $pi) { $sv = [string]$pi.PlaybackStatus; if ($sv -like '*Playing*') { $st = 'PLAYING' } elseif ($sv -like '*Paused*') { $st = 'PAUSED' } }\n" +
+                    "  $pos = 0; $dur = 0\n" +
+                    "  if ($null -ne $tp) { $pos = [long]$tp.Position.TotalMilliseconds; $dur = [long]$tp.EndTime.TotalMilliseconds }\n" +
                     "  Write-Output '===START==='\n" +
                     "  Write-Output \"TITLE=$([string]$mp.Title)\"\n" +
                     "  Write-Output \"ARTIST=$([string]$mp.Artist)\"\n" +
                     "  Write-Output \"ALBUM=$([string]$mp.AlbumTitle)\"\n" +
                     "  Write-Output \"STATUS=$st\"\n" +
                     "  Write-Output \"SOURCE=$([string]$cs.SourceAppUserModelId)\"\n" +
+                    "  Write-Output \"POSITION=$pos\"\n" +
+                    "  Write-Output \"DURATION=$dur\"\n" +
                     "  Write-Output '===END==='\n" +
                     "} catch { Write-Output \"ERROR=$($_.Exception.Message)\" }\n";
 
@@ -62,7 +67,13 @@ public class WindowsMediaProvider implements LocalMediaProvider {
         PlaybackStatus st = switch (d.getOrDefault("STATUS", "")) { case "PLAYING" -> PlaybackStatus.PLAYING; case "PAUSED" -> PlaybackStatus.PAUSED; default -> PlaybackStatus.STOPPED; };
         String src = d.getOrDefault("SOURCE", "").toLowerCase();
         String source = src.contains("spotify") ? "Spotify" : src.contains("chrome") ? "Chrome" : src.contains("firefox") ? "Firefox" : src.contains("yandex") ? "Yandex" : d.getOrDefault("SOURCE", "");
-        return Optional.of(new NowPlayingTrack(t.isEmpty() ? null : t, a.isEmpty() ? null : a, d.get("ALBUM"), st, source));
+        long pos = parseLong(d.get("POSITION"));
+        long dur = parseLong(d.get("DURATION"));
+        return Optional.of(new NowPlayingTrack(t.isEmpty() ? null : t, a.isEmpty() ? null : a, d.get("ALBUM"), st, source, null, pos, dur));
+    }
+
+    private long parseLong(String s) {
+        try { return s != null ? Long.parseLong(s.trim()) : 0; } catch (Exception e) { return 0; }
     }
 
     @Override public boolean isSupported() { return System.getProperty("os.name", "").toLowerCase().contains("windows"); }

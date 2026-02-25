@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 public class MacOsMediaProvider implements LocalMediaProvider {
 
-    private static final String SCRIPT = "tell application \"Spotify\"\nif player state is playing then\nreturn \"TITLE=\" & name of current track & \"\nARTIST=\" & artist of current track & \"\nALBUM=\" & album of current track & \"\nSTATUS=PLAYING\"\nelse if player state is paused then\nreturn \"TITLE=\" & name of current track & \"\nARTIST=\" & artist of current track & \"\nALBUM=\" & album of current track & \"\nSTATUS=PAUSED\"\nelse\nreturn \"NO_SESSION\"\nend if\nend tell";
+    private static final String SCRIPT = "tell application \"Spotify\"\nif player state is playing then\nset pos to player position\nset dur to duration of current track\nreturn \"TITLE=\" & name of current track & \"\nARTIST=\" & artist of current track & \"\nALBUM=\" & album of current track & \"\nSTATUS=PLAYING\nPOSITION=\" & (round (pos * 1000)) & \"\nDURATION=\" & dur\nelse if player state is paused then\nset pos to player position\nset dur to duration of current track\nreturn \"TITLE=\" & name of current track & \"\nARTIST=\" & artist of current track & \"\nALBUM=\" & album of current track & \"\nSTATUS=PAUSED\nPOSITION=\" & (round (pos * 1000)) & \"\nDURATION=\" & dur\nelse\nreturn \"NO_SESSION\"\nend if\nend tell";
 
     @Override
     public Optional<NowPlayingTrack> getCurrentTrack() {
@@ -33,7 +33,13 @@ public class MacOsMediaProvider implements LocalMediaProvider {
         String t = d.getOrDefault("TITLE", ""), a = d.getOrDefault("ARTIST", "");
         if (t.isEmpty() && a.isEmpty()) return Optional.empty();
         PlaybackStatus st = "PLAYING".equals(d.get("STATUS")) ? PlaybackStatus.PLAYING : PlaybackStatus.PAUSED;
-        return Optional.of(new NowPlayingTrack(t, a, d.get("ALBUM"), st, "Spotify"));
+        long pos = parseLong(d.get("POSITION"));
+        long dur = parseLong(d.get("DURATION"));
+        return Optional.of(new NowPlayingTrack(t, a, d.get("ALBUM"), st, "Spotify", null, pos, dur));
+    }
+
+    private long parseLong(String s) {
+        try { return s != null ? Long.parseLong(s.trim()) : 0; } catch (Exception e) { return 0; }
     }
 
     @Override public boolean isSupported() { return System.getProperty("os.name", "").toLowerCase().contains("mac"); }

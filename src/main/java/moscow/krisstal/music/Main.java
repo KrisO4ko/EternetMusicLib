@@ -4,11 +4,12 @@ import moscow.krisstal.music.cover.CoverArtFetcher;
 import moscow.krisstal.music.model.NowPlayingTrack;
 
 public class Main {
+    private static final long POLL_INTERVAL_MS = 200L;
+
     public static void main(String[] args) throws Exception {
         EternetMusicTracker tracker = new EternetMusicTracker();
         CoverArtFetcher cover = new CoverArtFetcher();
         String lastId = "";
-
 
         while (true) {
             NowPlayingTrack t = tracker.getCurrentTrackInterpolated();
@@ -27,7 +28,7 @@ public class Main {
                 System.out.print("\rTime: " + t.getTimeFormatted() + " [" + progress + "%]    ");
             }
 
-            Thread.sleep(200);
+            Thread.sleep(POLL_INTERVAL_MS);
         }
     }
 }
